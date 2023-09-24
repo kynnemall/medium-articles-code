@@ -33,7 +33,7 @@ spec = [
         ('ep_return', nb.int64),
         ('potential', nb.int64[:]),
         ('reward', nb.int64),
-        ('log2_res', nb.uint8[:, :]),
+        ('is_game_over', nb.b1),
         ]
         
 @nb.experimental.jitclass(spec)
@@ -173,16 +173,14 @@ class NumbaBoard:
                 arr.append(a)
             potential.append(score)
         self.possible_actions = np.array(arr).astype(np.uint8)
+        self.is_game_over = len(arr) > 0
         return potential
                 
     # reset and step functions required by OpenAI Gym
     def reset(self):
         self.__init__()
         self.ep_return  = 0
-        log2_res = np.where(self.board != 0, 
-                            np.log2(self.board), 
-                            0).astype(np.uint8)
-        return log2_res
+        return self.board
     
     def step(self, action):
         # call the action and get the score and outcome of that action
@@ -197,10 +195,7 @@ class NumbaBoard:
         
         # Increment the episodic return
         self.ep_return += 1
-        log2_res = np.where(self.board != 0, 
-                            np.log2(self.board), 
-                            0).astype(np.uint8)
-        return log2_res, reward, valid, done
+        return self.board, reward, valid, done
     
 # All method calls are working as expected
 def test_nb_board():
